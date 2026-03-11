@@ -9,9 +9,10 @@ final class AppSettings: ObservableObject {
     @AppStorage("copyToClipboard") var copyToClipboard: Bool = true
     @AppStorage("saveToFile") var saveToFile: Bool = false
     @AppStorage("showFloatingPreview") var showFloatingPreview: Bool = true
-    @AppStorage("floatingPreviewDuration") var floatingPreviewDuration: Double = 5.0
+    @AppStorage("floatingPreviewDuration") var floatingPreviewDuration: Double = 10.0
     @AppStorage("captureWindowShadow") var captureWindowShadow: Bool = true
     @AppStorage("playCaptureSound") var playCaptureSound: Bool = true
+    @AppStorage("hasShownShortcutGuide") var hasShownShortcutGuide: Bool = false
 
     var selectedExportFormat: ExportFormat {
         get { ExportFormat(rawValue: exportFormat) ?? .png }

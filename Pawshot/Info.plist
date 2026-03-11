@@ -20,6 +20,8 @@
     <string>$(MACOSX_DEPLOYMENT_TARGET)</string>
     <key>LSUIElement</key>
     <true/>
+    <key>CFBundleIconFile</key>
+    <string>AppIcon</string>
     <key>NSScreenCaptureUsageDescription</key>
     <string>Pawshot needs screen capture access to take screenshots.</string>
 </dict>

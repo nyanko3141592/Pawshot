@@ -32,8 +32,11 @@ final class AnnotationCanvasView: NSView {
     override var isFlipped: Bool { true }
 
     override var intrinsicContentSize: NSSize {
-        // Return a large size so SwiftUI gives us space
-        NSSize(width: NSView.noIntrinsicMetric, height: NSView.noIntrinsicMetric)
+        let imageSize = state.screenshot.image.size
+        guard imageSize.width > 0, imageSize.height > 0 else {
+            return NSSize(width: 400, height: 300)
+        }
+        return imageSize
     }
 
     private var imageRect: NSRect {
@@ -99,11 +102,22 @@ final class AnnotationCanvasView: NSView {
         context.translateBy(x: rect.origin.x, y: rect.origin.y)
         context.scaleBy(x: scale, y: scale)
 
-        for annotation in state.annotations {
+        // Draw pixelated regions for blur/mosaic annotations
+        if let cgImage = state.screenshot.cgImage {
+            for annotation in state.annotations where annotation.tool == .mosaic {
+                AnnotationRenderer.drawPixelatedPreview(annotation: annotation, cgImage: cgImage, in: context, imagePointSize: imageSize)
+            }
+            if let current = state.currentAnnotation, current.tool == .mosaic {
+                AnnotationRenderer.drawPixelatedPreview(annotation: current, cgImage: cgImage, in: context, imagePointSize: imageSize)
+            }
+        }
+
+        // Draw non-mosaic annotations
+        for annotation in state.annotations where annotation.tool != .mosaic {
             AnnotationRenderer.draw(annotation: annotation, in: context, imageSize: imageSize)
         }
 
-        if let current = state.currentAnnotation {
+        if let current = state.currentAnnotation, current.tool != .mosaic {
             AnnotationRenderer.draw(annotation: current, in: context, imageSize: imageSize)
         }
 

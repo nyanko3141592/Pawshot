@@ -22,14 +22,38 @@ struct ShortcutSettingsView: View {
                 }
             }
 
+            Section("macOS System Shortcuts") {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Pawshot uses the same shortcuts as macOS built-in screenshot (⌘⇧3/4/5). To avoid conflicts, disable the system shortcuts:")
+                        .font(.callout)
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("1. Open **System Settings** → **Keyboard** → **Keyboard Shortcuts**")
+                        Text("2. Select **Screenshots** in the sidebar")
+                        Text("3. Uncheck the shortcuts that conflict")
+                    }
+                    .font(.callout)
+
+                    Button("Open Keyboard Shortcuts Settings") {
+                        openKeyboardShortcutsSettings()
+                    }
+                }
+            }
+
             Section {
-                Text("Shortcuts can be customized in a future update.")
+                Text("Custom shortcut recording will be available in a future update.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
         }
         .formStyle(.grouped)
         .padding()
+    }
+
+    private func openKeyboardShortcutsSettings() {
+        if let url = URL(string: "x-apple.systempreferences:com.apple.Keyboard-Settings.extension?Shortcuts") {
+            NSWorkspace.shared.open(url)
+        }
     }
 
     private func labelForBinding(_ binding: HotkeyBinding) -> String {

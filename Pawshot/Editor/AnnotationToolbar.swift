@@ -32,9 +32,15 @@ struct AnnotationToolbar: View {
                 .frame(height: 24)
                 .padding(.horizontal, 4)
 
-            Slider(value: $state.selectedLineWidth, in: 1...10, step: 1)
-                .frame(width: 80)
-                .help("Line Width")
+            Picker("", selection: $state.selectedLineWidth) {
+                Text("1pt").tag(CGFloat(1))
+                Text("2pt").tag(CGFloat(2))
+                Text("4pt").tag(CGFloat(4))
+                Text("6pt").tag(CGFloat(6))
+                Text("10pt").tag(CGFloat(10))
+            }
+            .frame(width: 72)
+            .help("Line Width")
 
             Spacer()
 

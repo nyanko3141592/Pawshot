@@ -7,7 +7,6 @@ enum AnnotationTool: String, CaseIterable, Identifiable {
     case ellipse
     case text
     case highlighter
-    case blur
     case mosaic
     case crop
 
@@ -21,7 +20,6 @@ enum AnnotationTool: String, CaseIterable, Identifiable {
         case .ellipse: return "Ellipse"
         case .text: return "Text"
         case .highlighter: return "Highlighter"
-        case .blur: return "Blur"
         case .mosaic: return "Mosaic"
         case .crop: return "Crop"
         }
@@ -35,7 +33,6 @@ enum AnnotationTool: String, CaseIterable, Identifiable {
         case .ellipse: return "circle"
         case .text: return "textformat"
         case .highlighter: return "highlighter"
-        case .blur: return "drop.halffull"
         case .mosaic: return "squareshape.split.3x3"
         case .crop: return "crop"
         }

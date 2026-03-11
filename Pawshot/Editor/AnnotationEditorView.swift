@@ -13,6 +13,7 @@ struct AnnotationEditorView: View {
 
             AnnotationCanvas(state: state)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .layoutPriority(1)
 
             Divider()
 

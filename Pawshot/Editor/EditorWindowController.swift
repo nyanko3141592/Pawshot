@@ -24,6 +24,7 @@ final class EditorWindowController: NSWindowController {
         )
         window.title = "Pawshot Editor"
         window.contentViewController = hostingController
+        window.contentMinSize = NSSize(width: 500, height: 400)
         window.center()
         window.isReleasedWhenClosed = false
 

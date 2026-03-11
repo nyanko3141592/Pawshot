@@ -1,4 +1,5 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct FloatingPreviewView: View {
     let screenshot: Screenshot
@@ -13,6 +14,9 @@ struct FloatingPreviewView: View {
             Image(nsImage: screenshot.image.resized(to: previewSize))
                 .frame(width: previewSize.width, height: previewSize.height)
                 .clipped()
+                .onDrag {
+                    provideImageForDrag()
+                }
 
             if isHovering {
                 buttonOverlay
@@ -26,7 +30,45 @@ struct FloatingPreviewView: View {
             withAnimation(.easeInOut(duration: 0.15)) {
                 isHovering = hovering
             }
+            if hovering {
+                FloatingPreviewService.shared.pauseTimer()
+            } else {
+                FloatingPreviewService.shared.resumeTimer()
+            }
         }
+    }
+
+    private func provideImageForDrag() -> NSItemProvider {
+        let provider = NSItemProvider()
+
+        // Pause auto-dismiss while dragging
+        FloatingPreviewService.shared.pauseTimer()
+
+        provider.registerFileRepresentation(
+            forTypeIdentifier: UTType.png.identifier,
+            visibility: .all
+        ) { completion in
+            guard let tiffData = self.screenshot.image.tiffRepresentation,
+                  let bitmap = NSBitmapImageRep(data: tiffData),
+                  let pngData = bitmap.representation(using: .png, properties: [:]) else {
+                completion(nil, false, nil)
+                return nil
+            }
+
+            let tempURL = FileManager.default.temporaryDirectory
+                .appendingPathComponent("Pawshot_\(Int(Date().timeIntervalSince1970))")
+                .appendingPathExtension("png")
+
+            do {
+                try pngData.write(to: tempURL)
+                completion(tempURL, true, nil)
+            } catch {
+                completion(nil, false, error)
+            }
+            return nil
+        }
+
+        return provider
     }
 
     private var buttonOverlay: some View {

@@ -3,6 +3,55 @@ import CoreImage
 
 final class AnnotationRenderer {
 
+    private static let ciContext = CIContext()
+
+    // MARK: - Pixelated preview for blur/mosaic (canvas + final render)
+
+    static func drawPixelatedPreview(annotation: Annotation, cgImage: CGImage, in context: CGContext, imagePointSize: NSSize) {
+        let rawRect = annotation.boundingRect
+        let clampedRect = rawRect.intersection(CGRect(origin: .zero, size: imagePointSize))
+        guard clampedRect.width > 2, clampedRect.height > 2 else { return }
+
+        let pixelSize: CGFloat = max(annotation.lineWidth * 5, 20)
+
+        let scaleX = CGFloat(cgImage.width) / imagePointSize.width
+        let scaleY = CGFloat(cgImage.height) / imagePointSize.height
+
+        // CGImage.cropping uses top-left coordinates (matching pixel data layout)
+        let cropRect = CGRect(
+            x: clampedRect.origin.x * scaleX,
+            y: clampedRect.origin.y * scaleY,
+            width: clampedRect.width * scaleX,
+            height: clampedRect.height * scaleY
+        ).integral
+
+        guard cropRect.width > 0, cropRect.height > 0 else { return }
+        guard let croppedImage = cgImage.cropping(to: cropRect) else { return }
+
+        let ciImage = CIImage(cgImage: croppedImage)
+        let filter = CIFilter(name: "CIPixellate")!
+        filter.setValue(ciImage, forKey: kCIInputImageKey)
+        filter.setValue(pixelSize * max(scaleX, scaleY), forKey: kCIInputScaleKey)
+
+        guard let output = filter.outputImage,
+              let pixelatedImage = ciContext.createCGImage(output, from: ciImage.extent) else { return }
+
+        // Use NSImage.draw with respectFlipped for correct orientation in flipped context
+        let nsImage = NSImage(cgImage: pixelatedImage, size: clampedRect.size)
+        NSGraphicsContext.saveGraphicsState()
+        NSGraphicsContext.current = NSGraphicsContext(cgContext: context, flipped: true)
+        nsImage.draw(in: clampedRect, from: NSRect(origin: .zero, size: clampedRect.size),
+                     operation: .sourceOver, fraction: 1.0, respectFlipped: true, hints: nil)
+        NSGraphicsContext.restoreGraphicsState()
+
+        // Draw subtle border
+        context.saveGState()
+        context.setStrokeColor(NSColor.systemGray.withAlphaComponent(0.5).cgColor)
+        context.setLineWidth(1.0)
+        context.stroke(clampedRect)
+        context.restoreGState()
+    }
+
     // MARK: - Canvas preview drawing (flipped coordinate system)
 
     static func draw(annotation: Annotation, in context: CGContext, imageSize: NSSize) {
@@ -26,8 +75,8 @@ final class AnnotationRenderer {
             drawText(annotation, in: context)
         case .highlighter:
             drawHighlighter(annotation, in: context)
-        case .blur, .mosaic:
-            drawBlurPreview(annotation, in: context)
+        case .mosaic:
+            break // Handled by drawPixelatedPreview
         case .crop:
             drawCropOverlay(annotation, in: context, imageSize: imageSize)
         }
@@ -107,38 +156,17 @@ final class AnnotationRenderer {
         context.strokePath()
     }
 
-    private static func drawBlurPreview(_ annotation: Annotation, in context: CGContext) {
-        // Show a hatched rectangle as preview for blur/mosaic area
-        let rect = annotation.boundingRect
-        guard rect.width > 0, rect.height > 0 else { return }
-
-        context.setStrokeColor(NSColor.systemGray.withAlphaComponent(0.8).cgColor)
-        context.setLineWidth(1.5)
-        context.stroke(rect)
-
-        // Draw crosshatch pattern inside
-        context.saveGState()
-        context.clip(to: rect)
-        context.setStrokeColor(NSColor.systemGray.withAlphaComponent(0.3).cgColor)
-        context.setLineWidth(0.5)
-        let spacing: CGFloat = 8
-        var x = rect.minX
-        while x < rect.maxX + rect.height {
-            context.move(to: CGPoint(x: x, y: rect.minY))
-            context.addLine(to: CGPoint(x: x - rect.height, y: rect.maxY))
-            x += spacing
-        }
-        context.strokePath()
-        context.restoreGState()
-    }
-
     private static func drawCropOverlay(_ annotation: Annotation, in context: CGContext, imageSize: NSSize) {
         let rect = annotation.boundingRect
 
+        // Use even-odd fill to darken only the area outside the crop rect
         context.saveGState()
+        let path = CGMutablePath()
+        path.addRect(CGRect(origin: .zero, size: imageSize))
+        path.addRect(rect)
         context.setFillColor(NSColor.black.withAlphaComponent(0.5).cgColor)
-        context.fill(CGRect(origin: .zero, size: imageSize))
-        context.clear(rect)
+        context.addPath(path)
+        context.fillPath(using: .evenOdd)
         context.restoreGState()
 
         context.setStrokeColor(NSColor.white.cgColor)
@@ -151,14 +179,16 @@ final class AnnotationRenderer {
     static func renderFinalImage(screenshot: Screenshot, annotations: [Annotation]) -> CGImage? {
         guard let cgImage = screenshot.cgImage else { return nil }
 
-        let width = cgImage.width
-        let height = cgImage.height
-        let imageSize = NSSize(width: width, height: height)
+        let pixelWidth = cgImage.width
+        let pixelHeight = cgImage.height
+        let pointSize = screenshot.image.size
+        let pixelScaleX = CGFloat(pixelWidth) / pointSize.width
+        let pixelScaleY = CGFloat(pixelHeight) / pointSize.height
 
         guard let context = CGContext(
             data: nil,
-            width: width,
-            height: height,
+            width: pixelWidth,
+            height: pixelHeight,
             bitsPerComponent: 8,
             bytesPerRow: 0,
             space: CGColorSpaceCreateDeviceRGB(),
@@ -166,62 +196,71 @@ final class AnnotationRenderer {
         ) else { return nil }
 
         // Draw original image (CGContext is bottom-left origin)
-        context.draw(cgImage, in: CGRect(x: 0, y: 0, width: width, height: height))
+        context.draw(cgImage, in: CGRect(x: 0, y: 0, width: pixelWidth, height: pixelHeight))
 
-        // Apply blur/mosaic annotations
-        for annotation in annotations where annotation.tool == .blur {
-            applyPixellate(annotation: annotation, context: context, cgImage: cgImage, pixelSize: max(annotation.lineWidth * 3, 10))
-        }
+        // Apply mosaic annotations (works in pixel coordinates)
         for annotation in annotations where annotation.tool == .mosaic {
-            applyPixellate(annotation: annotation, context: context, cgImage: cgImage, pixelSize: max(annotation.lineWidth * 5, 20))
+            applyPixellate(annotation: annotation, context: context, cgImage: cgImage,
+                           pixelScaleX: pixelScaleX, pixelScaleY: pixelScaleY,
+                           pixelSize: max(annotation.lineWidth * 5, 20))
         }
 
-        // Flip context to match annotation coordinates (top-left origin)
+        // Flip and scale context: top-left point coords → bottom-left pixel coords
         context.saveGState()
-        context.translateBy(x: 0, y: CGFloat(height))
-        context.scaleBy(x: 1, y: -1)
+        context.translateBy(x: 0, y: CGFloat(pixelHeight))
+        context.scaleBy(x: pixelScaleX, y: -pixelScaleY)
 
-        for annotation in annotations where annotation.tool != .blur && annotation.tool != .mosaic && annotation.tool != .crop {
-            draw(annotation: annotation, in: context, imageSize: imageSize)
+        for annotation in annotations where annotation.tool != .mosaic && annotation.tool != .crop {
+            draw(annotation: annotation, in: context, imageSize: pointSize)
         }
         context.restoreGState()
 
-        // Handle crop
+        // Handle crop — CGImage.cropping uses top-left coordinates
         if let cropAnnotation = annotations.last(where: { $0.tool == .crop }) {
             let cropRect = cropAnnotation.boundingRect
-            let flippedRect = CGRect(
-                x: cropRect.origin.x,
-                y: CGFloat(height) - cropRect.origin.y - cropRect.height,
-                width: cropRect.width,
-                height: cropRect.height
+            // context.makeImage() produces a CGImage with top-left origin
+            // Annotation coords are already top-left, just scale to pixels
+            let pixelCropRect = CGRect(
+                x: cropRect.origin.x * pixelScaleX,
+                y: cropRect.origin.y * pixelScaleY,
+                width: cropRect.width * pixelScaleX,
+                height: cropRect.height * pixelScaleY
             )
             if let fullImage = context.makeImage() {
-                return fullImage.cropping(to: flippedRect)
+                return fullImage.cropping(to: pixelCropRect)
             }
         }
 
         return context.makeImage()
     }
 
-    private static func applyPixellate(annotation: Annotation, context: CGContext, cgImage: CGImage, pixelSize: CGFloat) {
+    private static func applyPixellate(annotation: Annotation, context: CGContext, cgImage: CGImage,
+                                        pixelScaleX: CGFloat, pixelScaleY: CGFloat, pixelSize: CGFloat) {
         let rect = annotation.boundingRect
         guard rect.width > 0, rect.height > 0 else { return }
 
-        // Convert from top-left to bottom-left coordinates
+        // Convert point coords to pixel coords
+        let pixelRect = CGRect(
+            x: rect.origin.x * pixelScaleX,
+            y: rect.origin.y * pixelScaleY,
+            width: rect.width * pixelScaleX,
+            height: rect.height * pixelScaleY
+        )
+
+        // Flip to bottom-left origin for CGImage/CIImage
         let flippedRect = CGRect(
-            x: rect.origin.x,
-            y: CGFloat(cgImage.height) - rect.origin.y - rect.height,
-            width: rect.width,
-            height: rect.height
+            x: pixelRect.origin.x,
+            y: CGFloat(cgImage.height) - pixelRect.origin.y - pixelRect.height,
+            width: pixelRect.width,
+            height: pixelRect.height
         )
 
         let ciImage = CIImage(cgImage: cgImage)
         let filter = CIFilter(name: "CIPixellate")!
         filter.setValue(ciImage, forKey: kCIInputImageKey)
-        filter.setValue(pixelSize, forKey: kCIInputScaleKey)
+        filter.setValue(pixelSize * max(pixelScaleX, pixelScaleY), forKey: kCIInputScaleKey)
         filter.setValue(CIVector(x: flippedRect.midX, y: flippedRect.midY), forKey: kCIInputCenterKey)
 
-        let ciContext = CIContext()
         if let output = filter.outputImage,
            let blurredImage = ciContext.createCGImage(output, from: ciImage.extent) {
             context.saveGState()
