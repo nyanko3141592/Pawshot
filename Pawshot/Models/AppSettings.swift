@@ -1,7 +1,23 @@
 import SwiftUI
+import ServiceManagement
 
 final class AppSettings: ObservableObject {
     static let shared = AppSettings()
+
+    @AppStorage("launchAtLogin") var launchAtLogin: Bool = false {
+        didSet {
+            do {
+                if launchAtLogin {
+                    try SMAppService.mainApp.register()
+                } else {
+                    try SMAppService.mainApp.unregister()
+                }
+            } catch {
+                // Revert on failure
+                launchAtLogin = oldValue
+            }
+        }
+    }
 
     @AppStorage("exportFormat") var exportFormat: String = ExportFormat.png.rawValue
     @AppStorage("jpegQuality") var jpegQuality: Double = 0.85
@@ -19,5 +35,8 @@ final class AppSettings: ObservableObject {
         set { exportFormat = newValue.rawValue }
     }
 
-    private init() {}
+    private init() {
+        // Sync launch-at-login state with system (user may have changed it in System Settings)
+        launchAtLogin = SMAppService.mainApp.status == .enabled
+    }
 }

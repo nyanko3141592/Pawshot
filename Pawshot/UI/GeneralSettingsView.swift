@@ -5,6 +5,10 @@ struct GeneralSettingsView: View {
 
     var body: some View {
         Form {
+            Section("General") {
+                Toggle("Launch at login", isOn: $settings.launchAtLogin)
+            }
+
             Section("After Capture") {
                 Toggle("Copy to clipboard", isOn: $settings.copyToClipboard)
                 Toggle("Save to file", isOn: $settings.saveToFile)
