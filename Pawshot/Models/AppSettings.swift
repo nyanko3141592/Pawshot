@@ -6,6 +6,7 @@ final class AppSettings: ObservableObject {
 
     @AppStorage("launchAtLogin") var launchAtLogin: Bool = false {
         didSet {
+            guard !isSyncingLoginState else { return }
             do {
                 if launchAtLogin {
                     try SMAppService.mainApp.register()
@@ -13,11 +14,14 @@ final class AppSettings: ObservableObject {
                     try SMAppService.mainApp.unregister()
                 }
             } catch {
-                // Revert on failure
+                isSyncingLoginState = true
                 launchAtLogin = oldValue
+                isSyncingLoginState = false
             }
         }
     }
+
+    private var isSyncingLoginState = false
 
     @AppStorage("exportFormat") var exportFormat: String = ExportFormat.png.rawValue
     @AppStorage("jpegQuality") var jpegQuality: Double = 0.85
@@ -37,6 +41,8 @@ final class AppSettings: ObservableObject {
 
     private init() {
         // Sync launch-at-login state with system (user may have changed it in System Settings)
+        isSyncingLoginState = true
         launchAtLogin = SMAppService.mainApp.status == .enabled
+        isSyncingLoginState = false
     }
 }
