@@ -6,6 +6,7 @@ struct FloatingPreviewView: View {
     let previewSize: NSSize
 
     @State private var isHovering = false
+    @State private var ocrInProgress = false
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
@@ -45,6 +46,21 @@ struct FloatingPreviewView: View {
                 let format = AppSettings.shared.selectedExportFormat
                 _ = try? FileExportService.shared.save(screenshot.image, format: format)
                 FloatingPreviewService.shared.dismiss()
+            }
+
+            actionButton(icon: "text.viewfinder", label: "OCR") {
+                ocrInProgress = true
+                Task {
+                    let success = await OCRService.shared.recognizeTextAndCopy(from: screenshot.image)
+                    await MainActor.run {
+                        ocrInProgress = false
+                        if success {
+                            FloatingPreviewService.shared.dismiss()
+                        } else {
+                            NSSound.beep()
+                        }
+                    }
+                }
             }
 
             actionButton(icon: "pencil", label: "Edit") {
