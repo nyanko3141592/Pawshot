@@ -61,6 +61,7 @@ struct ShortcutSettingsView: View {
         case "captureFullScreen": return "Capture Full Screen"
         case "captureArea": return "Capture Area"
         case "captureWindow": return "Capture Window"
+        case "ocrText": return "OCR Text"
         default: return binding.id
         }
     }

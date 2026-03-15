@@ -18,6 +18,7 @@ struct HotkeyBinding: Identifiable, Codable, Equatable {
         case kVK_ANSI_3: keyName = "3"
         case kVK_ANSI_4: keyName = "4"
         case kVK_ANSI_5: keyName = "5"
+        case kVK_ANSI_6: keyName = "6"
         default: keyName = "Key(\(keyCode))"
         }
         parts.append(keyName)
@@ -39,6 +40,7 @@ final class HotkeyService {
         HotkeyBinding(id: "captureFullScreen", keyCode: UInt32(kVK_ANSI_3), modifiers: UInt32(cmdKey | shiftKey)),
         HotkeyBinding(id: "captureArea", keyCode: UInt32(kVK_ANSI_4), modifiers: UInt32(cmdKey | shiftKey)),
         HotkeyBinding(id: "captureWindow", keyCode: UInt32(kVK_ANSI_5), modifiers: UInt32(cmdKey | shiftKey)),
+        HotkeyBinding(id: "ocrText", keyCode: UInt32(kVK_ANSI_6), modifiers: UInt32(cmdKey | shiftKey)),
     ]
 
     init() {
@@ -120,7 +122,10 @@ final class HotkeyService {
     private func loadBindings() {
         if let data = UserDefaults.standard.data(forKey: "hotkeyBindings"),
            let saved = try? JSONDecoder().decode([HotkeyBinding].self, from: data) {
-            bindings = saved
+            // Merge: keep saved bindings, add any new defaults that don't exist yet
+            let savedIDs = Set(saved.map(\.id))
+            let defaults = bindings
+            bindings = saved + defaults.filter { !savedIDs.contains($0.id) }
         }
     }
 }
@@ -152,6 +157,7 @@ private func hotkeyCallback(
         case 0: coordinator.startCapture(mode: .fullScreen)
         case 1: coordinator.startCapture(mode: .area)
         case 2: coordinator.startCapture(mode: .window)
+        case 3: coordinator.startCapture(mode: .ocrText)
         default: break
         }
     }

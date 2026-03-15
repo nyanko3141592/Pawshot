@@ -15,25 +15,14 @@ struct MenuBarView: View {
             }
 
             VStack(spacing: 2) {
-                ForEach(CaptureMode.allCases) { mode in
-                    Button {
-                        coordinator.startCapture(mode: mode)
-                    } label: {
-                        HStack {
-                            Image(systemName: mode.systemImage)
-                                .frame(width: 20)
-                            Text(mode.displayName)
-                            Spacer()
-                            Text(shortcutText(for: mode))
-                                .foregroundStyle(.secondary)
-                                .font(.caption)
-                        }
-                        .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
+                ForEach(CaptureMode.captureModes) { mode in
+                    captureButton(mode: mode)
                 }
+
+                Divider()
+                    .padding(.vertical, 4)
+
+                captureButton(mode: .ocrText)
             }
 
             Divider()
@@ -100,11 +89,32 @@ struct MenuBarView: View {
         .frame(width: 240)
     }
 
+    private func captureButton(mode: CaptureMode) -> some View {
+        Button {
+            coordinator.startCapture(mode: mode)
+        } label: {
+            HStack {
+                Image(systemName: mode.systemImage)
+                    .frame(width: 20)
+                Text(mode.displayName)
+                Spacer()
+                Text(shortcutText(for: mode))
+                    .foregroundStyle(.secondary)
+                    .font(.caption)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+    }
+
     private func shortcutText(for mode: CaptureMode) -> String {
         switch mode {
         case .fullScreen: return "⌘⇧3"
         case .area: return "⌘⇧4"
         case .window: return "⌘⇧5"
+        case .ocrText: return "⌘⇧6"
         }
     }
 }

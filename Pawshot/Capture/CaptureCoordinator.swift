@@ -8,6 +8,9 @@ final class CaptureCoordinator: ObservableObject {
     @Published var lastScreenshot: Screenshot?
     @Published var isCapturing = false
 
+    /// When true, area selection completes with OCR instead of normal capture
+    var pendingOCR = false
+
     private let captureService = CaptureService()
     private var selectionWindows: [SelectionOverlayWindow] = []
     private var windowPickerOverlay: WindowPickerOverlay?
@@ -24,9 +27,13 @@ final class CaptureCoordinator: ObservableObject {
             case .fullScreen:
                 await captureFullScreen()
             case .area:
+                pendingOCR = false
                 showSelectionOverlay()
             case .window:
                 showWindowPicker()
+            case .ocrText:
+                pendingOCR = true
+                showSelectionOverlay()
             }
         }
     }
@@ -71,6 +78,8 @@ final class CaptureCoordinator: ObservableObject {
 
     @MainActor
     func completeAreaCapture(rect: CGRect, screen: NSScreen) {
+        let isOCR = pendingOCR
+        pendingOCR = false
         dismissOverlays()
 
         Task {
@@ -90,11 +99,30 @@ final class CaptureCoordinator: ObservableObject {
                 )
 
                 let screenshot = try await captureService.captureArea(display: display, rect: flippedRect)
-                handleCaptureResult(screenshot)
+
+                if isOCR {
+                    handleOCRResult(screenshot)
+                } else {
+                    handleCaptureResult(screenshot)
+                }
             } catch {
                 print("Area capture failed: \(error)")
             }
             isCapturing = false
+        }
+    }
+
+    @MainActor
+    private func handleOCRResult(_ screenshot: Screenshot) {
+        Task {
+            let success = await OCRService.shared.recognizeTextAndCopy(from: screenshot.image)
+            if success {
+                if AppSettings.shared.playCaptureSound {
+                    NSSound(named: "Tink")?.play()
+                }
+            } else {
+                NSSound.beep()
+            }
         }
     }
 
