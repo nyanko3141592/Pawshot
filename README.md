@@ -1,46 +1,71 @@
-# Pawshot
+<p align="center">
+  <img src="docs/images/app-icon.png" width="128" height="128" alt="Pawshot icon">
+</p>
 
-A lightweight, open-source screenshot tool for macOS.
+<h1 align="center">Pawshot</h1>
+
+<p align="center">
+  <strong>A lightweight, open-source screenshot tool for macOS.</strong><br>
+  Capture, annotate, and share — all from your menu bar.
+</p>
+
+<p align="center">
+  <a href="README_ja.md">日本語</a>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/platform-macOS_13+-0A84FF?style=flat-square&logo=apple&logoColor=white" alt="macOS 13+">
+  <img src="https://img.shields.io/badge/Swift-5.9+-F05138?style=flat-square&logo=swift&logoColor=white" alt="Swift">
+  <img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="MIT License">
+</p>
+
+---
 
 ## Features
 
-- **Area Capture** — Select any region of your screen (⌘⇧4)
-- **Window Capture** — Click to capture a specific window (⌘⇧5)
-- **Full Screen Capture** — Capture the entire screen (⌘⇧3)
-- **Floating Preview** — Quick-access thumbnail after capture with Copy / Save / Edit actions
-- **Annotation Editor** — Arrow, line, rectangle, ellipse, text, highlighter, blur, mosaic, and crop tools
-- **Export** — PNG, JPEG, and WebP formats
-- **Menu Bar App** — Lives in your menu bar, no Dock icon
+- 📸 **Area Capture** — Select any region of your screen (`⌘⇧4`)
+- 🪟 **Window Capture** — Click to capture a specific window (`⌘⇧5`)
+- 🖥️ **Full Screen Capture** — Capture the entire screen (`⌘⇧3`)
+- 🔍 **Floating Preview** — Quick-access thumbnail with Copy / Save / Edit actions
+- ✏️ **Annotation Editor** — Arrows, shapes, text, highlighter, blur, mosaic, and crop
+- 📤 **Flexible Export** — PNG, JPEG, and WebP formats
+- 🔘 **Menu Bar App** — Lives in your menu bar, no Dock clutter
 
-## Requirements
+## Screenshots
 
-- macOS 13.0+ (Ventura or later)
+> _Coming soon._
+
+## Getting Started
+
+### Requirements
+
+- macOS 13.0 (Ventura) or later
 - Screen Recording permission
 
-## Building
-
-### With Swift Package Manager
+### Build with Swift Package Manager
 
 ```bash
 swift build
 ```
 
-### With Xcode
+### Build with Xcode
 
 ```bash
-# Generate Xcode project (requires xcodegen)
+# Install xcodegen if you haven't already
 brew install xcodegen
+
+# Generate and open the project
 xcodegen generate
 open Pawshot.xcodeproj
 ```
 
-### Creating an App Bundle
+### Create an App Bundle
 
 ```bash
 swift build
 mkdir -p Pawshot.app/Contents/MacOS
 cp .build/debug/Pawshot Pawshot.app/Contents/MacOS/
-cp Pawshot/Info.plist Pawshot.app/Contents/MacOS/../Info.plist
+cp Pawshot/Info.plist Pawshot.app/Contents/Info.plist
 
 # Ad-hoc sign for screen capture permission
 codesign --force --sign - Pawshot.app
@@ -48,33 +73,39 @@ codesign --force --sign - Pawshot.app
 
 ## Usage
 
-1. Launch Pawshot — an icon appears in the menu bar
-2. Grant Screen Recording permission in System Settings > Privacy & Security
-3. Use keyboard shortcuts or the menu bar to capture:
-   - **⌘⇧3** Full Screen
-   - **⌘⇧4** Area Selection
-   - **⌘⇧5** Window Selection
-4. After capture, a floating preview appears — click to Copy, Save, or Edit
-5. The annotation editor supports arrows, shapes, text, blur/mosaic, and crop
+1. **Launch** Pawshot — an icon appears in your menu bar.
+2. **Grant permission** — System Settings > Privacy & Security > Screen Recording.
+3. **Capture** using keyboard shortcuts or the menu bar icon:
+
+   | Shortcut | Action |
+   |----------|--------|
+   | `⌘⇧3` | Full Screen |
+   | `⌘⇧4` | Area Selection |
+   | `⌘⇧5` | Window Selection |
+
+4. A **floating preview** appears — click to Copy, Save, or Edit.
+5. The **annotation editor** supports arrows, shapes, text, blur/mosaic, and crop.
 
 ## Tech Stack
 
-- **Swift** (SwiftUI + AppKit)
-- **ScreenCaptureKit** (macOS 14+ with CGWindowListCreateImage fallback for macOS 13)
-- **Carbon Events** for global hotkeys
+| Component | Technology |
+|-----------|------------|
+| UI | SwiftUI + AppKit |
+| Capture | ScreenCaptureKit (macOS 14+) with CGWindowListCreateImage fallback |
+| Hotkeys | Carbon Events |
 
 ## Project Structure
 
 ```
 Pawshot/
-├── PawshotApp.swift          # @main, MenuBarExtra
-├── AppDelegate.swift          # AppKit integration
-├── Models/                    # Data models
-├── Services/                  # Capture engine, clipboard, export, hotkeys
-├── Capture/                   # Selection overlay, window picker
-├── Editor/                    # Annotation editor, canvas, renderer
-├── UI/                        # Menu bar, settings, floating preview
-└── Extensions/                # Helper extensions
+├── PawshotApp.swift        # @main, MenuBarExtra
+├── AppDelegate.swift        # AppKit integration
+├── Models/                  # Data models
+├── Services/                # Capture engine, clipboard, export, hotkeys
+├── Capture/                 # Selection overlay, window picker
+├── Editor/                  # Annotation editor, canvas, renderer
+├── UI/                      # Menu bar, settings, floating preview
+└── Extensions/              # Helper extensions
 ```
 
 ## License
