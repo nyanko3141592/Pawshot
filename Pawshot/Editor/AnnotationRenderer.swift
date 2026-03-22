@@ -88,10 +88,6 @@ final class AnnotationRenderer {
         let start = annotation.startPoint
         let end = annotation.endPoint
 
-        context.move(to: start)
-        context.addLine(to: end)
-        context.strokePath()
-
         let angle = atan2(end.y - start.y, end.x - start.x)
         let arrowLength: CGFloat = max(annotation.lineWidth * 5, 15)
         let arrowAngle: CGFloat = .pi / 6
@@ -104,6 +100,16 @@ final class AnnotationRenderer {
             x: end.x - arrowLength * cos(angle + arrowAngle),
             y: end.y - arrowLength * sin(angle + arrowAngle)
         )
+
+        // Stop the line at the base of the arrowhead so it doesn't poke through
+        let lineEnd = CGPoint(
+            x: (p1.x + p2.x) / 2,
+            y: (p1.y + p2.y) / 2
+        )
+
+        context.move(to: start)
+        context.addLine(to: lineEnd)
+        context.strokePath()
 
         context.move(to: end)
         context.addLine(to: p1)
