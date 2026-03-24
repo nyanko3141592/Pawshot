@@ -4,6 +4,7 @@ struct FloatingPreviewView: View {
     let screenshot: Screenshot
     let coordinator: CaptureCoordinator
     let previewSize: NSSize
+    let previewID: UUID
 
     @State private var isHovering = false
     @State private var ocrInProgress = false
@@ -27,11 +28,6 @@ struct FloatingPreviewView: View {
             withAnimation(.easeInOut(duration: 0.15)) {
                 isHovering = hovering
             }
-            if hovering {
-                FloatingPreviewService.shared.pauseTimer()
-            } else {
-                FloatingPreviewService.shared.resumeTimer()
-            }
         }
     }
 
@@ -39,13 +35,13 @@ struct FloatingPreviewView: View {
         HStack(spacing: 4) {
             actionButton(icon: "doc.on.doc", label: "Copy") {
                 ClipboardService.shared.copyToClipboard(screenshot.image)
-                FloatingPreviewService.shared.dismiss()
+                FloatingPreviewService.shared.dismiss(id: previewID)
             }
 
             actionButton(icon: "square.and.arrow.down", label: "Save") {
                 let format = AppSettings.shared.selectedExportFormat
                 _ = try? FileExportService.shared.save(screenshot.image, format: format)
-                FloatingPreviewService.shared.dismiss()
+                FloatingPreviewService.shared.dismiss(id: previewID)
             }
 
             actionButton(icon: "text.viewfinder", label: "OCR") {
@@ -55,7 +51,7 @@ struct FloatingPreviewView: View {
                     await MainActor.run {
                         ocrInProgress = false
                         if success {
-                            FloatingPreviewService.shared.dismiss()
+                            FloatingPreviewService.shared.dismiss(id: previewID)
                         } else {
                             NSSound.beep()
                         }
@@ -64,12 +60,12 @@ struct FloatingPreviewView: View {
             }
 
             actionButton(icon: "pencil", label: "Edit") {
-                FloatingPreviewService.shared.dismiss()
+                FloatingPreviewService.shared.dismiss(id: previewID)
                 coordinator.openEditor(for: screenshot)
             }
 
             actionButton(icon: "xmark", label: "Close") {
-                FloatingPreviewService.shared.dismiss()
+                FloatingPreviewService.shared.dismiss(id: previewID)
             }
         }
         .padding(6)

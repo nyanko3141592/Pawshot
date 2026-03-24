@@ -16,18 +16,6 @@ struct GeneralSettingsView: View {
                 Toggle("Play capture sound", isOn: $settings.playCaptureSound)
             }
 
-            Section("Floating Preview") {
-                HStack {
-                    Text("Auto-dismiss after")
-                    TextField("", value: $settings.floatingPreviewDuration, format: .number)
-                        .frame(width: 50)
-                    Text("seconds")
-                }
-                Text("Set to 0 to disable auto-dismiss")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-
             Section("Export") {
                 Picker("Default format:", selection: $settings.exportFormat) {
                     ForEach(ExportFormat.allCases) { format in

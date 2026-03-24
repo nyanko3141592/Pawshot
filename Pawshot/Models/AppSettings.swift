@@ -1,5 +1,4 @@
 import SwiftUI
-import ServiceManagement
 
 final class AppSettings: ObservableObject {
     static let shared = AppSettings()
@@ -7,16 +6,10 @@ final class AppSettings: ObservableObject {
     @AppStorage("launchAtLogin") var launchAtLogin: Bool = false {
         didSet {
             guard !isSyncingLoginState else { return }
-            do {
-                if launchAtLogin {
-                    try SMAppService.mainApp.register()
-                } else {
-                    try SMAppService.mainApp.unregister()
-                }
-            } catch {
-                isSyncingLoginState = true
-                launchAtLogin = oldValue
-                isSyncingLoginState = false
+            if launchAtLogin {
+                LaunchAgentService.install()
+            } else {
+                LaunchAgentService.uninstall()
             }
         }
     }
@@ -29,7 +22,6 @@ final class AppSettings: ObservableObject {
     @AppStorage("copyToClipboard") var copyToClipboard: Bool = true
     @AppStorage("saveToFile") var saveToFile: Bool = false
     @AppStorage("showFloatingPreview") var showFloatingPreview: Bool = true
-    @AppStorage("floatingPreviewDuration") var floatingPreviewDuration: Double = 10.0
     @AppStorage("captureWindowShadow") var captureWindowShadow: Bool = true
     @AppStorage("playCaptureSound") var playCaptureSound: Bool = true
     @AppStorage("hasShownShortcutGuide") var hasShownShortcutGuide: Bool = false
@@ -40,9 +32,8 @@ final class AppSettings: ObservableObject {
     }
 
     private init() {
-        // Sync launch-at-login state with system (user may have changed it in System Settings)
         isSyncingLoginState = true
-        launchAtLogin = SMAppService.mainApp.status == .enabled
+        launchAtLogin = LaunchAgentService.isInstalled()
         isSyncingLoginState = false
     }
 }
