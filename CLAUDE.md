@@ -39,6 +39,7 @@ open Pawshot.xcodeproj
 - **`ScreenCaptureEngine`** — uses `SCScreenshotManager` on macOS 14+, falls back to `CGWindowListCreateImage` on macOS 13 (`LegacyCaptureEngine`).
 - **`HotkeyService`** — native Carbon `RegisterEventHotKey` with C-compatible function pointer callback (not closures). Default shortcuts: ⌘⇧3/4/5.
 - **NSWindow lifecycle** — all overlay windows use `isReleasedWhenClosed = false` and `orderOut(nil)` instead of `close()`.
+- **Floating preview drag & drop** — SwiftUI `.onDrag` doesn't work in non-activating `NSPanel`. `DraggablePreviewContainerView` (AppKit `NSDraggingSource`) wraps the SwiftUI hosting view and handles `mouseDragged` natively.
 - **Coordinate systems** — capture overlays and annotation canvas use flipped coordinates (`isFlipped = true`). `AnnotationRenderer` flips context for final render. Text uses `NSGraphicsContext(cgContext:, flipped: true)`.
 - **Point vs pixel sizes** — `CaptureService.nsImage(from:)` divides CGImage pixel dimensions by `backingScaleFactor` to get correct point size.
 
@@ -55,7 +56,8 @@ open Pawshot.xcodeproj
 - `ClipboardService` — NSPasteboard operations
 - `FileExportService` — PNG/JPEG/WebP export via NSSavePanel
 - `PermissionService` — `CGPreflightScreenCaptureAccess()` check + prompt
-- `FloatingPreviewService` — manages floating thumbnail panel
+- `FloatingPreviewService` — manages multiple stacked floating thumbnail panels (up to 5)
+- `LaunchAgentService` — launch-at-login via `~/Library/LaunchAgents/` plist (replaced SMAppService for SPM compatibility)
 
 ### Editor (`Pawshot/Editor/`)
 - `AnnotationCanvas` — NSViewRepresentable, `isFlipped=true`, draws with `image.draw(respectFlipped: true)`
@@ -66,3 +68,5 @@ open Pawshot.xcodeproj
 - **macOS 13+ target** — avoid APIs only available on macOS 14+ (e.g., `SCStreamConfiguration.scaleFactor`, `SettingsLink`). Use `#available` checks where needed.
 - **No external dependencies** — `Package.swift` has zero dependencies. Hotkeys use Carbon directly.
 - **SPM doesn't compile xcassets into .icns** — the `AppIcon.icns` file in `Resources/` is pre-built via `iconutil` and manually copied into the `.app` bundle.
+- **XcodeGen overwrites entitlements** — `xcodegen generate` overwrites `Pawshot.entitlements`. Must restore after generation.
+- **SwiftUI limitations in AppKit windows** — SwiftUI gestures (`.onDrag`, `.onTapGesture`) may not work in borderless/non-activating `NSPanel`. Use AppKit event handling (`mouseDown`/`mouseDragged`) as wrapper when needed.

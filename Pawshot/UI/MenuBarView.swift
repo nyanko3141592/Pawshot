@@ -67,6 +67,32 @@ struct MenuBarView: View {
                 .padding(.vertical, 6)
             }
 
+            if !coordinator.screenshotHistory.isEmpty {
+                Divider()
+                    .padding(.vertical, 4)
+
+                HStack {
+                    Text("Recent Captures")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Button {
+                        coordinator.clearHistory()
+                    } label: {
+                        Text("Clear")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.horizontal, 12)
+                .padding(.bottom, 2)
+
+                ForEach(coordinator.screenshotHistory.prefix(5)) { screenshot in
+                    historyRow(screenshot: screenshot)
+                }
+            }
+
             Divider()
                 .padding(.vertical, 4)
 
@@ -86,7 +112,77 @@ struct MenuBarView: View {
             .padding(.vertical, 6)
             .padding(.bottom, 4)
         }
-        .frame(width: 240)
+        .frame(width: 260)
+    }
+
+    private func historyRow(screenshot: Screenshot) -> some View {
+        HStack(spacing: 8) {
+            let thumbSize = historyThumbnailSize(for: screenshot.image.size)
+            Image(nsImage: screenshot.image.resized(to: thumbSize))
+                .frame(width: 40, height: 28)
+                .background(Color(nsColor: .quaternaryLabelColor))
+                .cornerRadius(3)
+
+            VStack(alignment: .leading, spacing: 1) {
+                Text(screenshot.captureMode.displayName)
+                    .font(.caption)
+                    .lineLimit(1)
+                Text(historyTimeString(screenshot.capturedAt))
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer()
+
+            Button {
+                ClipboardService.shared.copyToClipboard(screenshot.image)
+            } label: {
+                Image(systemName: "doc.on.doc")
+                    .font(.system(size: 11))
+                    .frame(width: 22, height: 22)
+            }
+            .buttonStyle(.plain)
+            .help("Copy")
+
+            Button {
+                coordinator.openEditor(for: screenshot)
+            } label: {
+                Image(systemName: "pencil")
+                    .font(.system(size: 11))
+                    .frame(width: 22, height: 22)
+            }
+            .buttonStyle(.plain)
+            .help("Edit")
+
+            Button {
+                FloatingPreviewService.shared.show(screenshot: screenshot, coordinator: coordinator)
+            } label: {
+                Image(systemName: "macwindow.badge.plus")
+                    .font(.system(size: 11))
+                    .frame(width: 22, height: 22)
+            }
+            .buttonStyle(.plain)
+            .help("Show Preview")
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 3)
+    }
+
+    private func historyThumbnailSize(for imageSize: NSSize) -> NSSize {
+        let maxW: CGFloat = 40
+        let maxH: CGFloat = 28
+        let scale = min(maxW / max(imageSize.width, 1), maxH / max(imageSize.height, 1), 1.0)
+        return NSSize(width: ceil(imageSize.width * scale), height: ceil(imageSize.height * scale))
+    }
+
+    private func historyTimeString(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        if Calendar.current.isDateInToday(date) {
+            formatter.dateFormat = "HH:mm"
+        } else {
+            formatter.dateFormat = "M/d HH:mm"
+        }
+        return formatter.string(from: date)
     }
 
     private func captureButton(mode: CaptureMode) -> some View {

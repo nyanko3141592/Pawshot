@@ -10,10 +10,16 @@ final class FloatingPreviewWindow: NSPanel {
         let imageSize = screenshot.image.size  // Already in points
         let maxWidth: CGFloat = 200
         let maxHeight: CGFloat = 140
+        let minWidth: CGFloat = 120  // Enough for 4 action buttons at bottom + close at top-right
+        let minHeight: CGFloat = 44  // Enough for close button to not overflow
         let scale = min(maxWidth / max(imageSize.width, 1), maxHeight / max(imageSize.height, 1), 1.0)
-        let previewSize = NSSize(
+        let imageDisplaySize = NSSize(
             width: ceil(imageSize.width * scale),
             height: ceil(imageSize.height * scale)
+        )
+        let previewSize = NSSize(
+            width: max(imageDisplaySize.width, minWidth),
+            height: max(imageDisplaySize.height, minHeight)
         )
 
         super.init(

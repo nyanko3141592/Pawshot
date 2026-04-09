@@ -7,6 +7,8 @@ final class CaptureCoordinator: ObservableObject {
 
     @Published var lastScreenshot: Screenshot?
     @Published var isCapturing = false
+    @Published var screenshotHistory: [Screenshot] = []
+    private let maxHistoryItems = 10
 
     /// When true, area selection completes with OCR instead of normal capture
     var pendingOCR = false
@@ -162,9 +164,19 @@ final class CaptureCoordinator: ObservableObject {
         }
     }
 
+    func clearHistory() {
+        screenshotHistory.removeAll()
+    }
+
     @MainActor
     private func handleCaptureResult(_ screenshot: Screenshot) {
         lastScreenshot = screenshot
+
+        // Add to history
+        screenshotHistory.insert(screenshot, at: 0)
+        if screenshotHistory.count > maxHistoryItems {
+            screenshotHistory.removeLast()
+        }
 
         if AppSettings.shared.copyToClipboard {
             ClipboardService.shared.copyToClipboard(screenshot.image)
