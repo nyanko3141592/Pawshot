@@ -35,11 +35,24 @@
 
 > _準備中_
 
+## インストール
+
+### Homebrew
+
+```bash
+brew install nyanko3141592/tap/pawshot
+```
+
+### ダウンロード
+
+[Releases](https://github.com/nyanko3141592/Pawshot/releases) ページから最新の `.dmg` をダウンロードしてください。
+
 ## はじめに
 
 ### 必要環境
 
 - macOS 13.0（Ventura）以降
+- Apple Silicon（arm64）
 - 画面収録の許可
 
 ### Swift Package Manager でビルド

@@ -35,11 +35,24 @@
 
 > _Coming soon._
 
+## Installation
+
+### Homebrew
+
+```bash
+brew install nyanko3141592/tap/pawshot
+```
+
+### Download
+
+Download the latest `.dmg` from the [Releases](https://github.com/nyanko3141592/Pawshot/releases) page.
+
 ## Getting Started
 
 ### Requirements
 
 - macOS 13.0 (Ventura) or later
+- Apple Silicon (arm64)
 - Screen Recording permission
 
 ### Build with Swift Package Manager

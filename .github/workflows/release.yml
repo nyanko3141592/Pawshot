@@ -1,0 +1,41 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  update-homebrew-cask:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Extract version and SHA256
+        id: info
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          VERSION="${TAG#v}"
+          DMG_URL="https://github.com/${{ github.repository }}/releases/download/${TAG}/Pawshot-${VERSION}.dmg"
+          curl -L -o pawshot.dmg "$DMG_URL"
+          SHA256=$(shasum -a 256 pawshot.dmg | awk '{print $1}')
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "sha256=$SHA256" >> "$GITHUB_OUTPUT"
+
+      - name: Update Homebrew Cask
+        env:
+          TAP_GITHUB_TOKEN: ${{ secrets.TAP_GITHUB_TOKEN }}
+        run: |
+          VERSION="${{ steps.info.outputs.version }}"
+          SHA256="${{ steps.info.outputs.sha256 }}"
+
+          git clone https://x-access-token:${TAP_GITHUB_TOKEN}@github.com/nyanko3141592/homebrew-tap.git
+          cd homebrew-tap
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          sed -i "s/version \".*\"/version \"${VERSION}\"/" Casks/pawshot.rb
+          sed -i "s/sha256 \".*\"/sha256 \"${SHA256}\"/" Casks/pawshot.rb
+
+          git add Casks/pawshot.rb
+          git diff --cached --quiet && echo "No changes" && exit 0
+          git commit -m "Update Pawshot to v${VERSION}"
+          git push
