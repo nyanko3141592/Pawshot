@@ -37,15 +37,24 @@
 
 ## インストール
 
-### Homebrew
+### Homebrew（推奨）
 
 ```bash
 brew install nyanko3141592/tap/pawshot
 ```
 
-### ダウンロード
+アップデート：
 
-[Releases](https://github.com/nyanko3141592/Pawshot/releases) ページから最新の `.dmg` をダウンロードしてください。
+```bash
+brew upgrade pawshot
+```
+
+### 手動ダウンロード
+
+1. [Releases](https://github.com/nyanko3141592/Pawshot/releases) ページから最新の `.dmg` をダウンロード。
+2. `.dmg` を開き、**Pawshot.app** を Applications フォルダにドラッグ。
+3. Pawshot を起動 — メニューバーにアイコンが表示されます。
+4. **画面収録**の権限を許可（システム設定 > プライバシーとセキュリティ > 画面収録）。
 
 ## はじめに
 

@@ -37,15 +37,24 @@
 
 ## Installation
 
-### Homebrew
+### Homebrew (recommended)
 
 ```bash
 brew install nyanko3141592/tap/pawshot
 ```
 
-### Download
+To update:
 
-Download the latest `.dmg` from the [Releases](https://github.com/nyanko3141592/Pawshot/releases) page.
+```bash
+brew upgrade pawshot
+```
+
+### Manual Download
+
+1. Download the latest `.dmg` from the [Releases](https://github.com/nyanko3141592/Pawshot/releases) page.
+2. Open the `.dmg` and drag **Pawshot.app** to your Applications folder.
+3. Launch Pawshot — it will appear in your menu bar.
+4. Grant **Screen Recording** permission when prompted (System Settings > Privacy & Security > Screen Recording).
 
 ## Getting Started
 
