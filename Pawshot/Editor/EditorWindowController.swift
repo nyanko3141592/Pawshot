@@ -13,8 +13,10 @@ final class EditorWindowController: NSWindowController {
         let imageSize = screenshot.image.size  // Already in points
 
         let toolbarHeight: CGFloat = 100
-        let windowWidth = max(min(imageSize.width + 40, screenFrame.width * 0.9), 500)
-        let windowHeight = max(min(imageSize.height + toolbarHeight, screenFrame.height * 0.9), 400)
+        let maxWidth = screenFrame.width * 0.85
+        let maxHeight = screenFrame.height * 0.85
+        let windowWidth = max(min(imageSize.width + 40, maxWidth), 500)
+        let windowHeight = max(min(imageSize.height + toolbarHeight, maxHeight), 400)
 
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: windowWidth, height: windowHeight),
@@ -25,8 +27,20 @@ final class EditorWindowController: NSWindowController {
         window.title = "Pawshot Editor"
         window.contentViewController = hostingController
         window.contentMinSize = NSSize(width: 500, height: 400)
-        window.center()
         window.isReleasedWhenClosed = false
+
+        // Center within visible screen area and ensure window stays within bounds
+        window.center()
+        var frame = window.frame
+        frame.origin.x = max(frame.origin.x, screenFrame.origin.x)
+        frame.origin.y = max(frame.origin.y, screenFrame.origin.y)
+        if frame.maxX > screenFrame.maxX {
+            frame.origin.x = screenFrame.maxX - frame.width
+        }
+        if frame.maxY > screenFrame.maxY {
+            frame.origin.y = screenFrame.maxY - frame.height
+        }
+        window.setFrame(frame, display: true)
 
         self.init(window: window)
 

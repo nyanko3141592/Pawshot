@@ -199,6 +199,8 @@ final class CaptureCoordinator: ObservableObject {
     func openEditor(for screenshot: Screenshot) {
         let controller = EditorWindowController(screenshot: screenshot)
         controller.showWindow(nil)
+        NSApp.activate(ignoringOtherApps: true)
+        controller.window?.makeKeyAndOrderFront(nil)
     }
 }
 
