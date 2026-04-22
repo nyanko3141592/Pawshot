@@ -18,7 +18,7 @@ final class ScreenCaptureEngine {
         }
     }
 
-    func captureFullScreen(display: SCDisplay) async throws -> CGImage {
+    func captureFullScreen(display: SCDisplay, pixelScale: CGFloat) async throws -> CGImage {
         guard PermissionService.shared.hasScreenCapturePermission else {
             throw CaptureError.noPermission
         }
@@ -26,8 +26,8 @@ final class ScreenCaptureEngine {
         if #available(macOS 14.0, *) {
             let filter = SCContentFilter(display: display, excludingWindows: [])
             let config = SCStreamConfiguration()
-            config.width = display.width * 2
-            config.height = display.height * 2
+            config.width = Int(CGFloat(display.width) * pixelScale)
+            config.height = Int(CGFloat(display.height) * pixelScale)
             config.showsCursor = false
 
             let image = try await SCScreenshotManager.captureImage(
@@ -44,7 +44,7 @@ final class ScreenCaptureEngine {
         }
     }
 
-    func captureArea(display: SCDisplay, rect: CGRect) async throws -> CGImage {
+    func captureArea(display: SCDisplay, rect: CGRect, pixelScale: CGFloat) async throws -> CGImage {
         guard PermissionService.shared.hasScreenCapturePermission else {
             throw CaptureError.noPermission
         }
@@ -52,10 +52,13 @@ final class ScreenCaptureEngine {
         if #available(macOS 14.0, *) {
             let filter = SCContentFilter(display: display, excludingWindows: [])
             let config = SCStreamConfiguration()
-            // Output size must match the source rect, scaled for Retina
+            // sourceRect is in points (relative to the filter's content);
+            // width/height are output pixels. Keep the aspect ratio aligned
+            // with the display's actual backing scale so no extra padding
+            // is introduced around the captured area.
             config.sourceRect = rect
-            config.width = Int(rect.width) * 2
-            config.height = Int(rect.height) * 2
+            config.width = Int((rect.width * pixelScale).rounded())
+            config.height = Int((rect.height * pixelScale).rounded())
             config.showsCursor = false
 
             let image = try await SCScreenshotManager.captureImage(
@@ -72,7 +75,7 @@ final class ScreenCaptureEngine {
         }
     }
 
-    func captureWindow(_ window: SCWindow) async throws -> CGImage {
+    func captureWindow(_ window: SCWindow, pixelScale: CGFloat) async throws -> CGImage {
         guard PermissionService.shared.hasScreenCapturePermission else {
             throw CaptureError.noPermission
         }
@@ -81,8 +84,8 @@ final class ScreenCaptureEngine {
             let filter = SCContentFilter(desktopIndependentWindow: window)
             let config = SCStreamConfiguration()
             config.showsCursor = false
-            config.width = Int(window.frame.width) * 2
-            config.height = Int(window.frame.height) * 2
+            config.width = Int((window.frame.width * pixelScale).rounded())
+            config.height = Int((window.frame.height * pixelScale).rounded())
 
             let image = try await SCScreenshotManager.captureImage(
                 contentFilter: filter,

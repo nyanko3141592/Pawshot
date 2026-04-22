@@ -27,3 +27,5 @@ Package.resolved
 
 # App bundle (dev build)
 Pawshot.app/
+build-release/
+*.dmg
