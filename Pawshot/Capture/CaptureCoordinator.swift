@@ -100,7 +100,11 @@ final class CaptureCoordinator: ObservableObject {
                     height: rect.height
                 )
 
-                let screenshot = try await captureService.captureArea(display: display, rect: flippedRect)
+                let screenshot = try await captureService.captureArea(
+                    display: display,
+                    rect: flippedRect,
+                    pixelScale: screen.backingScaleFactor
+                )
 
                 if isOCR {
                     handleOCRResult(screenshot)
