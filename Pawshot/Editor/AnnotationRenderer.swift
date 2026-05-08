@@ -73,6 +73,8 @@ final class AnnotationRenderer {
             drawEllipse(annotation, in: context)
         case .text:
             drawText(annotation, in: context)
+        case .number:
+            drawNumber(annotation, in: context)
         case .highlighter:
             drawHighlighter(annotation, in: context)
         case .mosaic:
@@ -146,6 +148,49 @@ final class AnnotationRenderer {
         NSGraphicsContext.saveGraphicsState()
         NSGraphicsContext.current = NSGraphicsContext(cgContext: context, flipped: true)
         nsString.draw(at: annotation.startPoint, withAttributes: attributes)
+        NSGraphicsContext.restoreGraphicsState()
+    }
+
+    private static func drawNumber(_ annotation: Annotation, in context: CGContext) {
+        guard let text = annotation.text, !text.isEmpty else { return }
+
+        // Diameter scales with fontSize; widen slightly for 2+ digit numbers
+        // so they don't crowd the circle edge.
+        let baseDiameter = max(annotation.fontSize * 2.0, 28)
+        let extraForDigits = max(0, CGFloat(text.count) - 1) * annotation.fontSize * 0.45
+        let diameter = baseDiameter + extraForDigits
+        let radius = diameter / 2
+
+        // The click position is treated as the circle's center.
+        let center = annotation.startPoint
+        let circleRect = CGRect(
+            x: center.x - radius,
+            y: center.y - radius,
+            width: diameter,
+            height: diameter
+        )
+
+        context.saveGState()
+        context.setFillColor(annotation.color.cgColor)
+        context.fillEllipse(in: circleRect)
+        context.restoreGState()
+
+        // Number — white, bold, centered in the circle.
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: NSFont.systemFont(ofSize: annotation.fontSize, weight: .bold),
+            .foregroundColor: NSColor.white,
+        ]
+        let nsString = text as NSString
+        let textSize = nsString.size(withAttributes: attributes)
+        let textOrigin = CGPoint(
+            x: center.x - textSize.width / 2,
+            y: center.y - textSize.height / 2
+        )
+
+        // Flipped context to match the canvas (isFlipped = true).
+        NSGraphicsContext.saveGraphicsState()
+        NSGraphicsContext.current = NSGraphicsContext(cgContext: context, flipped: true)
+        nsString.draw(at: textOrigin, withAttributes: attributes)
         NSGraphicsContext.restoreGraphicsState()
     }
 
