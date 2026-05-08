@@ -13,8 +13,13 @@ final class EditorWindowController: NSWindowController {
         let imageSize = screenshot.image.size  // Already in points
 
         let toolbarHeight: CGFloat = 100
-        let maxWidth = screenFrame.width * 0.85
-        let maxHeight = screenFrame.height * 0.85
+        // Cap default window size to ~60% of the visible screen so big captures
+        // (Retina 4K/5K) don't dominate the desktop. AnnotationCanvas already
+        // aspect-fits the image into its view, so a smaller window just shrinks
+        // the displayed image — no functionality lost. The user can still drag
+        // the window larger via the resize handle.
+        let maxWidth = screenFrame.width * 0.60
+        let maxHeight = screenFrame.height * 0.60
         let windowWidth = max(min(imageSize.width + 40, maxWidth), 500)
         let windowHeight = max(min(imageSize.height + toolbarHeight, maxHeight), 400)
 

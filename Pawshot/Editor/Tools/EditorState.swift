@@ -18,6 +18,13 @@ final class EditorState: ObservableObject {
         self.screenshot = screenshot
     }
 
+    /// Next number to assign to a number-stamp annotation. Counted from existing
+    /// annotations so Undo/Redo automatically rewinds the counter without any
+    /// extra state to keep in sync.
+    var nextNumber: Int {
+        annotations.filter { $0.tool == .number }.count + 1
+    }
+
     func beginAnnotation(at point: CGPoint) {
         var annotation = Annotation(
             tool: selectedTool,
@@ -35,6 +42,15 @@ final class EditorState: ObservableObject {
         if selectedTool == .text {
             annotation.text = promptForText()
             if annotation.text == nil { return }
+            annotation.isCompleted = true
+            pushUndo()
+            annotations.append(annotation)
+            return
+        }
+
+        if selectedTool == .number {
+            // Click-only stamp: place immediately with the next number.
+            annotation.text = String(nextNumber)
             annotation.isCompleted = true
             pushUndo()
             annotations.append(annotation)
